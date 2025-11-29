@@ -5,6 +5,7 @@ import 'dart:convert';
 import '../config.dart';
 import '../web_image.dart';
 import 'news_detail_screen.dart';
+import 'notifications_screen.dart';
 import '../widgets/animated_background.dart';
 
 class FeedScreen extends StatefulWidget {
@@ -55,6 +56,18 @@ class _FeedScreenState extends State<FeedScreen> {
           ),
         ),
         automaticallyImplyLeading: false,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.notifications_outlined, color: Colors.black),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const NotificationsScreen()),
+              );
+            },
+          ),
+          const SizedBox(width: 8),
+        ],
       ),
       body: AnimatedBackground(
         child: isLoading

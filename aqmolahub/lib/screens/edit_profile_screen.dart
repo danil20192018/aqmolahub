@@ -36,40 +36,60 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   Future<void> _pickImage() async {
-    final picker = ImagePicker();
-    final image = await picker.pickImage(source: ImageSource.gallery);
-    if (image != null) {
-      setState(() => isLoading = true);
+    try {
+      final picker = ImagePicker();
+      final image = await picker.pickImage(source: ImageSource.gallery);
       
-      final prefs = await SharedPreferences.getInstance();
-      final userId = prefs.getInt('user_id') ?? 0;
-      
-      try {
-        final bytes = await image.readAsBytes();
-        final request = http.MultipartRequest(
-          'POST',
-          Uri.parse('${Cfg.url}upload.php?type=avatar'),
-        );
-        request.fields['user_id'] = userId.toString();
-        request.files.add(http.MultipartFile.fromBytes(
-          'file',
-          bytes,
-          filename: 'avatar_${userId}_${DateTime.now().millisecondsSinceEpoch}.jpg',
-        ));
+      if (image != null) {
+        setState(() => isLoading = true);
         
-        final response = await request.send();
-        final responseData = await response.stream.bytesToString();
-        final data = jsonDecode(responseData);
+        final prefs = await SharedPreferences.getInstance();
+        final userId = prefs.getInt('user_id') ?? 0;
         
-        if (data['success'] == true) {
-          setState(() => avatarUrl = '${Cfg.url}${data['url']}');
+        try {
+          final bytes = await image.readAsBytes();
+          final request = http.MultipartRequest(
+            'POST',
+            Uri.parse('${Cfg.url}upload.php?type=avatar'),
+          );
+          request.fields['user_id'] = userId.toString();
+          request.files.add(http.MultipartFile.fromBytes(
+            'file',
+            bytes,
+            filename: 'avatar_${userId}_${DateTime.now().millisecondsSinceEpoch}.jpg',
+          ));
+          
+          final response = await request.send();
+          final responseData = await response.stream.bytesToString();
+          
+          try {
+            final data = jsonDecode(responseData);
+            if (data['success'] == true) {
+              setState(() => avatarUrl = '${Cfg.url}${data['url']}');
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Фото загружено! Нажмите Сохранить.')),
+              );
+            } else {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Ошибка сервера: ${data['error']}')),
+              );
+            }
+          } catch (e) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Ошибка ответа: $responseData')),
+            );
+          }
+        } catch (e) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Ошибка отправки: $e')),
+          );
         }
-      } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Ошибка загрузки')),
-        );
+        setState(() => isLoading = false);
       }
-      setState(() => isLoading = false);
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('ошибк выбора фото: $e')),
+      );
     }
   }
 
@@ -164,17 +184,30 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           children: [
             GestureDetector(
               onTap: _pickImage,
-              child: WebCircleAvatar(
-                radius: 60,
-                backgroundColor: Colors.grey.shade300,
-                imageUrl: avatarUrl,
-                child: avatarUrl == null
-                    ? const Icon(Icons.camera_alt, size: 40, color: Colors.grey)
-                    : null,
+              behavior: HitTestBehavior.opaque,
+              child: Column(
+                children: [
+                  WebCircleAvatar(
+                    radius: 60,
+                    backgroundColor: Colors.grey.shade300,
+                    imageUrl: avatarUrl,
+                    child: avatarUrl == null
+                        ? const Icon(Icons.camera_alt, size: 40, color: Colors.grey)
+                        : null,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Нажмите для изменения',
+                    style: GoogleFonts.montserrat(
+                      fontSize: 12,
+                      color: Colors.blue,
+                      fontWeight: FontWeight.bold,
+                      decoration: TextDecoration.underline,
+                    ),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 8),
-            Text('Нажмите для изменения', style: GoogleFonts.montserrat(fontSize: 12, color: Colors.grey)),
             const SizedBox(height: 32),
             TextField(
               controller: nameCtrl,

@@ -38,7 +38,11 @@ class _LoginScreenState extends State<LoginScreen> {
           await prefs.setString('role', d['r'] ?? '');
           await prefs.setInt('user_id', d['user_id'] ?? 0);
           if (d['avatar'] != null) {
-            await prefs.setString('avatar', d['avatar']);
+            String avatar = d['avatar'];
+            if (!avatar.startsWith('http')) {
+              avatar = '${Cfg.url}$avatar';
+            }
+            await prefs.setString('avatar', avatar);
           }
           Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const HomeScreen()));
         } else {
@@ -46,7 +50,7 @@ class _LoginScreenState extends State<LoginScreen> {
         }
       }
     } catch (e) {
-       // err
+       
     }
     setState(() => _l = false);
   }

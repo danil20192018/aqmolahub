@@ -4,6 +4,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../web_circle_avatar.dart';
 import 'login_screen.dart';
 import 'edit_profile_screen.dart';
+import 'help_screen.dart';
+import 'settings_screen.dart';
 import '../widgets/animated_background.dart';
 
 class AccountScreen extends StatefulWidget {
@@ -27,8 +29,8 @@ class _AccountScreenState extends State<AccountScreen> {
   Future<void> _loadData() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
-      userName = prefs.getString('name') ?? 'Пользователь';
-      userEmail = prefs.getString('email') ?? 'user@example.com';
+      userName = prefs.getString('name') ?? 'человек какой то';
+      userEmail = prefs.getString('email') ?? 'pochta@aqmola.hub';
       avatarUrl = prefs.getString('avatar');
     });
   }
@@ -62,11 +64,11 @@ class _AccountScreenState extends State<AccountScreen> {
         automaticallyImplyLeading: false,
       ),
       body: AnimatedBackground(
-        child: SingleChildScrollView(
+        child: Padding(
           padding: const EdgeInsets.all(24.0),
           child: Column(
             children: [
-              const SizedBox(height: 20),
+              const SizedBox(height: 10),
               Center(
                 child: Container(
                   padding: const EdgeInsets.all(4),
@@ -75,35 +77,35 @@ class _AccountScreenState extends State<AccountScreen> {
                     border: Border.all(color: Colors.black, width: 2),
                   ),
                   child: WebCircleAvatar(
-                    radius: 60,
+                    radius: 50,
                     backgroundColor: Colors.grey.shade200,
                     imageUrl: avatarUrl,
                     child: avatarUrl == null
-                        ? const Icon(Icons.person, size: 60, color: Colors.grey)
+                        ? const Icon(Icons.person, size: 50, color: Colors.grey)
                         : null,
                   ),
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 16),
               Text(
                 userName.toUpperCase(),
                 style: GoogleFonts.montserrat(
-                  fontSize: 24,
+                  fontSize: 20,
                   fontWeight: FontWeight.w900,
                   letterSpacing: 1.0,
                 ),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 4),
               Text(
                 userEmail,
                 style: GoogleFonts.montserrat(
-                  fontSize: 14,
+                  fontSize: 12,
                   color: Colors.grey.shade600,
                   fontWeight: FontWeight.w500,
                 ),
               ),
-              const SizedBox(height: 48),
+              const SizedBox(height: 32),
               _buildMenuItem(
                 title: 'РЕДАКТИРОВАТЬ',
                 icon: Icons.edit_outlined,
@@ -115,19 +117,29 @@ class _AccountScreenState extends State<AccountScreen> {
                   _loadData();
                 },
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
               _buildMenuItem(
                 title: 'НАСТРОЙКИ',
                 icon: Icons.settings_outlined,
-                onTap: () {},
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const SettingsScreen()),
+                  );
+                },
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
               _buildMenuItem(
                 title: 'ПОМОЩЬ',
                 icon: Icons.help_outline,
-                onTap: () {},
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const HelpScreen()),
+                  );
+                },
               ),
-              const SizedBox(height: 48),
+              const Spacer(),
               TextButton(
                 onPressed: _logout,
                 child: Text(
@@ -139,6 +151,7 @@ class _AccountScreenState extends State<AccountScreen> {
                   ),
                 ),
               ),
+              const SizedBox(height: 20),
             ],
           ),
         ),

@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../config.dart';
 import '../widgets/animated_background.dart';
+import 'event_detail_screen.dart';
 import '../web_image.dart';
 
 class EventsScreen extends StatefulWidget {
@@ -43,25 +44,25 @@ class _EventsScreenState extends State<EventsScreen> {
     setState(() {
       events = [
         {
-          'title': 'DEMO DAY 2025',
+          'title': 'PIIZA PITCH',
           'date': '25 МАЯ',
           'time': '14:00',
-          'location': 'Aqmola Hub, зал 1',
-          'image': 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&q=80&w=1000',
+          'location': 'Aqmola Hub, 6 ЭТАЖ АК ЖЕЛКЕН',
+          'image': '',
         },
         {
           'title': 'HACKATHON: AI & WEB',
           'date': '10 ИЮНЯ',
           'time': '09:00',
-          'location': 'Коворкинг',
-          'image': 'https://images.unsplash.com/photo-1504384308090-c54be3855212?auto=format&fit=crop&q=80&w=1000',
+          'location': 'Aqmola Hub, 6 ЭТАЖ АК ЖЕЛКЕН',
+          'image': '',
         },
         {
           'title': 'ВСТРЕЧА С ИНВЕСТОРАМИ',
           'date': '15 ИЮНЯ',
           'time': '18:30',
-          'location': 'Конференц-зал',
-          'image': 'https://images.unsplash.com/photo-1556761175-5973dc0f32e7?auto=format&fit=crop&q=80&w=1000',
+          'location': 'Aqmola Hub, 6 ЭТАЖ АК ЖЕЛКЕН-зал',
+          'image': '',
         },
       ];
       isLoading = false;
@@ -192,7 +193,9 @@ class _EventsScreenState extends State<EventsScreen> {
                                       borderRadius: BorderRadius.circular(8),
                                     ),
                                   ),
-                                  onPressed: () {},
+                                  onPressed: () {
+                                    Navigator.push(context, MaterialPageRoute(builder: (_) => EventDetailScreen(event: item)));
+                                  },
                                   child: Text(
                                     'ПОДРОБНЕЕ',
                                     style: GoogleFonts.montserrat(

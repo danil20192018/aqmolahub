@@ -38,7 +38,7 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
   Future<void> _fetchComments() async {
     try {
       final response = await http.get(Uri.parse('${Cfg.url}news.php?act=comments&id=${widget.news['id']}'));
-      print('Comments response: ${response.body}');
+      print('${response.body}');
       if (response.statusCode == 200) {
         final allComments = jsonDecode(response.body) as List;
         allComments.sort((a, b) {
@@ -49,7 +49,7 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
         setState(() => commentsList = allComments);
       }
     } catch (e) {
-      print('Error fetching comments: $e');
+      // нечего 
     }
   }
 
