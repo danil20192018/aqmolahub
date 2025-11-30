@@ -20,7 +20,6 @@ class _AiMentorScreenState extends State<AiMentorScreen> {
   @override
   void initState() {
     super.initState();
-    // Приветственное сообщение
     _msgs.add({
       'role': 'assistant',
       'content': 'Привет! Я твой AI Ментор. Готов помочь с твоим стартапом. Что обсудим? Могу составить Business Model Canvas, Roadmap или проанализировать конкурентов.'

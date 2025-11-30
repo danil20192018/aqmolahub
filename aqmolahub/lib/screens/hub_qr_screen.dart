@@ -36,8 +36,19 @@ class _HubQRScreenState extends State<HubQRScreen> {
 
   Future<void> _scanQR(String code) async {
     if (scanning) return;
+    await cameraController.stop();
     setState(() => scanning = true);
 
+    if (code.startsWith('QR_')) {
+      await _handleVRCard(code);
+    } else {
+      await _handleMoney(code);
+    }
+
+    setState(() => scanning = false);
+  }
+
+  Future<void> _handleMoney(String code) async {
     final prefs = await SharedPreferences.getInstance();
     final uid = prefs.getInt('user_id');
 
@@ -53,18 +64,164 @@ class _HubQRScreenState extends State<HubQRScreen> {
         _showSuccess(d['coins']);
       } else {
         _showError(d['err'] ?? 'ошибка');
+        await cameraController.start();
       }
     } catch (e) {
       _showError('ошибка сети');
+      await cameraController.start();
     }
+  }
 
-    setState(() => scanning = false);
+  Future<void> _handleVRCard(String code) async {
+    try {
+      final res = await http.get(Uri.parse('${Cfg.url}qr_card.php?act=get&qr=$code'));
+      final d = jsonDecode(res.body);
+
+      if (d['res'] == true) {
+        _showHologram(d['data']);
+      } else {
+        _showError(d['err'] ?? 'карточка не найдена');
+        await cameraController.start();
+      }
+    } catch (e) {
+      _showError('ошибка загрузки карты');
+      await cameraController.start();
+    }
+  }
+
+  void _showHologram(Map<String, dynamic> data) {
+    showGeneralDialog(
+      context: context,
+      barrierDismissible: true,
+      barrierLabel: 'Close',
+      barrierColor: Colors.black.withOpacity(0.8),
+      transitionDuration: const Duration(milliseconds: 400),
+      pageBuilder: (ctx, anim1, anim2) {
+        return Center(
+          child: Material(
+            color: Colors.transparent,
+            child: Container(
+              width: 320,
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.black.withOpacity(0.6),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: Colors.cyanAccent, width: 2),
+                boxShadow: [
+                  BoxShadow(color: Colors.cyanAccent.withOpacity(0.5), blurRadius: 30, spreadRadius: 5),
+                  const BoxShadow(color: Colors.blueAccent, blurRadius: 50, spreadRadius: 1, offset: Offset(0, 0)),
+                ],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Icon(Icons.nfc, color: Colors.cyanAccent, size: 20),
+                      Text('HOLOGRAM ID', style: GoogleFonts.orbitron(color: Colors.cyanAccent, fontSize: 10, letterSpacing: 2)),
+                      const Icon(Icons.battery_charging_full, color: Colors.cyanAccent, size: 20),
+                    ],
+                  ),
+                  const Divider(color: Colors.cyanAccent, thickness: 1),
+                  const SizedBox(height: 20),
+                  
+                  Container(
+                    width: 100, height: 100,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.cyanAccent, width: 3),
+                      boxShadow: [BoxShadow(color: Colors.cyanAccent.withOpacity(0.6), blurRadius: 20)],
+                      image: data['avatar'] != null && data['avatar'].toString().isNotEmpty
+                          ? DecorationImage(image: NetworkImage(data['avatar']), fit: BoxFit.cover)
+                          : null,
+                    ),
+                    child: data['avatar'] == null || data['avatar'].toString().isEmpty
+                        ? const Icon(Icons.person, color: Colors.cyanAccent, size: 50)
+                        : null,
+                  ),
+                  const SizedBox(height: 20),
+                  
+                  Text(
+                    (data['name'] ?? 'UNKNOWN').toUpperCase(),
+                    style: GoogleFonts.orbitron(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold, letterSpacing: 1.5),
+                    textAlign: TextAlign.center,
+                  ),
+                  Text(
+                    (data['role'] ?? 'NO DATA').toUpperCase(),
+                    style: GoogleFonts.orbitron(color: Colors.cyanAccent, fontSize: 14, letterSpacing: 1),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 16),
+                  
+                  if (data['bio'] != null) ...[
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: Colors.cyanAccent.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.cyanAccent.withOpacity(0.3)),
+                      ),
+                      child: Text(
+                        data['bio'],
+                        style: GoogleFonts.montserrat(color: Colors.white70, fontSize: 12),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.remove_red_eye, color: Colors.cyanAccent, size: 16),
+                      const SizedBox(width: 8),
+                      Text(
+                        'SCANS: ${data['scans']}',
+                        style: GoogleFonts.orbitron(color: Colors.cyanAccent, fontSize: 12),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton(
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: Colors.cyanAccent),
+                        backgroundColor: Colors.cyanAccent.withOpacity(0.1),
+                      ),
+                      onPressed: () => Navigator.pop(ctx),
+                      child: Text('TERMINATE LINK', style: GoogleFonts.orbitron(color: Colors.cyanAccent, fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+      transitionBuilder: (ctx, anim1, anim2, child) {
+        return Transform.scale(
+          scale: anim1.value,
+          child: Opacity(
+            opacity: anim1.value,
+            child: child,
+          ),
+        );
+      },
+    ).then((_) {
+      setState(() => scanning = false);
+      cameraController.start();
+    });
   }
 
   void _showSuccess(int earned) {
     showDialog(
       context: context,
+      barrierDismissible: false,
       builder: (ctx) => AlertDialog(
+        backgroundColor: Colors.grey[900],
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -96,11 +253,14 @@ class _HubQRScreenState extends State<HubQRScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text('КРУТО!', style: GoogleFonts.montserrat(fontWeight: FontWeight.bold)),
+            child: Text('КРУТО!', style: GoogleFonts.montserrat(fontWeight: FontWeight.bold, color: Colors.white)),
           ),
         ],
       ),
-    );
+    ).then((_) {
+      setState(() => scanning = false);
+      cameraController.start();
+    });
   }
 
   void _showError(String msg) {

@@ -33,40 +33,17 @@ class _EventsScreenState extends State<EventsScreen> {
           isLoading = false;
         });
       } else {
-        _loadMockData();
+        setState(() => isLoading = false);
+        _showError('Ошибка сервера: ${response.statusCode}');
       }
     } catch (e) {
-      _loadMockData();
+      setState(() => isLoading = false);
+      _showError('Ошибка сети: $e');
     }
   }
 
-  void _loadMockData() {
-    setState(() {
-      events = [
-        {
-          'title': 'PIIZA PITCH',
-          'date': '25 МАЯ',
-          'time': '14:00',
-          'location': 'Aqmola Hub, 6 ЭТАЖ АК ЖЕЛКЕН',
-          'image': '',
-        },
-        {
-          'title': 'HACKATHON: AI & WEB',
-          'date': '10 ИЮНЯ',
-          'time': '09:00',
-          'location': 'Aqmola Hub, 6 ЭТАЖ АК ЖЕЛКЕН',
-          'image': '',
-        },
-        {
-          'title': 'ВСТРЕЧА С ИНВЕСТОРАМИ',
-          'date': '15 ИЮНЯ',
-          'time': '18:30',
-          'location': 'Aqmola Hub, 6 ЭТАЖ АК ЖЕЛКЕН-зал',
-          'image': '',
-        },
-      ];
-      isLoading = false;
-    });
+  void _showError(String msg) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
   }
 
   @override
@@ -90,11 +67,20 @@ class _EventsScreenState extends State<EventsScreen> {
       body: AnimatedBackground(
         child: isLoading
             ? const Center(child: CircularProgressIndicator(color: Colors.black))
-            : ListView.builder(
+            : events.isEmpty 
+                ? Center(child: Text('Нет мероприятий', style: GoogleFonts.montserrat()))
+                : ListView.builder(
                 padding: const EdgeInsets.all(16),
                 itemCount: events.length,
                 itemBuilder: (context, index) {
                   final item = events[index];
+                  
+                  // Fix Image URL
+                  String? imageUrl = item['image'];
+                  if (imageUrl != null && imageUrl.isNotEmpty && !imageUrl.startsWith('http')) {
+                    imageUrl = '${Cfg.url}$imageUrl';
+                  }
+
                   return Container(
                     margin: const EdgeInsets.only(bottom: 24),
                     decoration: BoxDecoration(
@@ -112,11 +98,11 @@ class _EventsScreenState extends State<EventsScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        if (item['image'] != null)
+                        if (imageUrl != null && imageUrl.isNotEmpty)
                           ClipRRect(
                             borderRadius: const BorderRadius.vertical(top: Radius.circular(10.5)),
                             child: WebImage(
-                              item['image'],
+                              imageUrl,
                               width: double.infinity,
                               height: 180,
                               fit: BoxFit.cover,

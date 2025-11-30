@@ -49,7 +49,6 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
         setState(() => commentsList = allComments);
       }
     } catch (e) {
-      // нечего 
     }
   }
 

@@ -104,7 +104,7 @@ class _NetworkingScreenState extends State<NetworkingScreen> {
                   setModalState(() => uploadedImageUrl = '${Cfg.url}${data['url']}');
                 }
               } catch (e) {
-                // Handle error
+                
               }
               setModalState(() => isUploading = false);
             }

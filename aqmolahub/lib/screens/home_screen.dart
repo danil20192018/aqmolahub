@@ -15,6 +15,7 @@ import 'ai_mentor_screen.dart';
 import 'ai_board_screen.dart';
 import 'market_screen.dart';
 import 'startup_generator_screen.dart';
+import 'ittok_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -151,6 +152,7 @@ class _HomeScreenState extends State<HomeScreen> {
               _buildMenuItem(Icons.groups, 'AI Совет Директоров'),
               _buildMenuItem(Icons.shopping_cart, 'Биржа Талантов'),
               _buildMenuItem(Icons.lightbulb, 'Генератор Стартапов'),
+              _buildMenuItem(Icons.play_circle_filled, 'АйтТок'),
               const SizedBox(height: 20),
             ],
           ),
@@ -199,6 +201,8 @@ class _HomeScreenState extends State<HomeScreen> {
           Navigator.push(context, MaterialPageRoute(builder: (_) => const MarketScreen()));
         } else if (title == 'Генератор Стартапов') {
           Navigator.push(context, MaterialPageRoute(builder: (_) => const StartupGeneratorScreen()));
+        } else if (title == 'АйтТок') {
+          Navigator.push(context, MaterialPageRoute(builder: (_) => const IttokScreen()));
         }
       },
     );

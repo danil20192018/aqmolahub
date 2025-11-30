@@ -5,6 +5,10 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'register_screen.dart';
 import 'home_screen.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:uuid/uuid.dart';
+import 'dart:async';
+import 'dart:math';
 import '../config.dart';
 import '../widgets/animated_background.dart';
 
@@ -55,6 +59,103 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _l = false);
   }
 
+  Future<void> _loginWithTelegram() async {
+    final code = (100000 + Random().nextInt(900000)).toString();
+    
+    try {
+      final res = await http.post(
+        Uri.parse('${Cfg.url}telegram_code.php'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'code': code}),
+      );
+    } catch (e) {
+    }
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        title: Text('Вход через Telegram', style: GoogleFonts.montserrat(fontWeight: FontWeight.bold)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('Ваш код для входа:', style: GoogleFonts.montserrat(fontSize: 14)),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.black,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                code,
+                style: GoogleFonts.montserrat(
+                  fontSize: 32,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                  letterSpacing: 8,
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text('Напишите боту:', style: GoogleFonts.montserrat(fontSize: 12, color: Colors.grey)),
+            Text('/code $code', style: GoogleFonts.montserrat(fontSize: 14, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            const CircularProgressIndicator(color: Colors.black, strokeWidth: 2),
+            const SizedBox(height: 8),
+            Text('Ожидание подтверждения...', style: GoogleFonts.montserrat(fontSize: 12, color: Colors.grey)),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text('ОТМЕНА', style: GoogleFonts.montserrat(fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+
+    int attempts = 0;
+    Timer.periodic(const Duration(seconds: 2), (timer) async {
+      attempts++;
+      if (attempts > 60 || !mounted) {
+        timer.cancel();
+        if (mounted && Navigator.canPop(context)) Navigator.pop(context);
+        return;
+      }
+
+      try {
+        final res = await http.get(Uri.parse('${Cfg.url}telegram_code.php?code=$code'));
+        if (res.statusCode == 200) {
+          final d = jsonDecode(res.body);
+          if (d['res'] == true) {
+            timer.cancel();
+            if (mounted && Navigator.canPop(context)) Navigator.pop(context);
+            
+            final prefs = await SharedPreferences.getInstance();
+            await prefs.setString('token', d['t']);
+            await prefs.setString('name', d['name'] ?? 'User');
+            await prefs.setString('email', d['email'] ?? '');
+            await prefs.setString('role', d['r'] ?? '');
+            await prefs.setInt('user_id', d['user_id'] ?? 0);
+            if (d['avatar'] != null) {
+              String avatar = d['avatar'];
+              if (!avatar.startsWith('http')) {
+                avatar = '${Cfg.url}$avatar';
+              }
+              await prefs.setString('avatar', avatar);
+            }
+            
+            if (mounted) {
+              Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const HomeScreen()));
+            }
+          }
+        }
+      } catch (e) {
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -90,32 +191,36 @@ class _LoginScreenState extends State<LoginScreen> {
               _buildTextField(controller: _e, label: 'EMAIL'),
               const SizedBox(height: 24),
               _buildTextField(controller: _p, label: 'ПАРОЛЬ', isObscure: true),
-              const SizedBox(height: 48),
-              _l
-                  ? const Center(child: CircularProgressIndicator(color: Colors.black))
-                  : SizedBox(
-                      width: double.infinity,
-                      height: 56,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.black,
-                          foregroundColor: Colors.white,
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        onPressed: _doLogin,
-                        child: Text(
-                          'ВОЙТИ',
-                          style: GoogleFonts.montserrat(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                            letterSpacing: 1.0,
-                          ),
-                        ),
-                      ),
-                    ),
+              const SizedBox(height: 32),
+              SizedBox(
+                width: double.infinity,
+                height: 56,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.black,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  onPressed: _l ? null : _doLogin,
+                  child: _l
+                      ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                      : Text('ВОЙТИ', style: GoogleFonts.montserrat(fontSize: 16, fontWeight: FontWeight.bold)),
+                ),
+              ),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                height: 56,
+                child: OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: Colors.blue, width: 2),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  onPressed: _l ? null : _loginWithTelegram,
+                  icon: const Icon(Icons.telegram, color: Colors.blue),
+                  label: Text('ВОЙТИ ЧЕРЕЗ TELEGRAM', style: GoogleFonts.montserrat(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.blue)),
+                ),
+              ),
               const SizedBox(height: 24),
               Center(
                 child: TextButton(

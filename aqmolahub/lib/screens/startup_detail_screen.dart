@@ -119,8 +119,8 @@ class StartupDetailScreen extends StatelessWidget {
             child: Text(
               content,
               style: GoogleFonts.montserrat(
-                fontSize: 14,
                 height: 1.6,
+                fontSize: 14,
                 fontWeight: FontWeight.w500,
               ),
             ),

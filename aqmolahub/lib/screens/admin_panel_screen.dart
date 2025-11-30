@@ -83,8 +83,12 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> with SingleTickerPr
       final response = await http.get(Uri.parse('${Cfg.url}events.php?act=list'));
       if (response.statusCode == 200) {
         setState(() => eventsList = jsonDecode(response.body));
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Ошибка загрузки мероприятий: ${response.statusCode}')));
       }
-    } catch (e) {}
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Ошибка сети: $e')));
+    }
   }
 
   Future<void> _fetchVacancies() async {
@@ -824,17 +828,25 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> with SingleTickerPr
               onPressed: _showAddEventSheet,
               child: const Icon(Icons.add, color: Colors.white),
             ),
-            body: ListView.builder(
+            body: eventsList.isEmpty 
+                ? const Center(child: Text('Нет мероприятий'))
+                : ListView.builder(
               padding: const EdgeInsets.all(16),
               itemCount: eventsList.length,
               itemBuilder: (context, index) {
                 final item = eventsList[index];
+                
+                String? imageUrl = item['image'];
+                if (imageUrl != null && imageUrl.isNotEmpty && !imageUrl.startsWith('http')) {
+                  imageUrl = '${Cfg.url}$imageUrl';
+                }
+
                 return Card(
                   margin: const EdgeInsets.only(bottom: 12),
                   child: ListTile(
                     onTap: () => _showRegistrations(item['id']),
-                    leading: item['image'] != null
-                        ? ClipRRect(borderRadius: BorderRadius.circular(4), child: WebImage(item['image'], width: 50, height: 50, fit: BoxFit.cover))
+                    leading: imageUrl != null
+                        ? ClipRRect(borderRadius: BorderRadius.circular(4), child: WebImage(imageUrl, width: 50, height: 50, fit: BoxFit.cover))
                         : const Icon(Icons.event),
                     title: Text(item['title'], style: GoogleFonts.montserrat(fontWeight: FontWeight.bold)),
                     subtitle: Text('${item['date']} ${item['time']}\n${item['location']}\nРегистраций: ${item['registration_count'] ?? 0}', style: GoogleFonts.montserrat(fontSize: 12)),

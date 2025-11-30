@@ -32,7 +32,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Аккаунт создан')));
       }
     } catch (e) {
-       // err
     }
     setState(() => _l = false);
   }
